@@ -8,7 +8,8 @@
 
 //require express in our app
 var express = require('express'),
-  bodyParser = require('body-parser');
+  bodyParser = require('body-parser'),
+  db = require('./models');
 
 // generate a new express app and call it 'app'
 var app = express();
@@ -70,29 +71,41 @@ app.get('/', function (req, res) {
 // get all books
 app.get('/api/books', function (req, res) {
   // send all books as JSON response
-  console.log('books index');
-  res.json(books);
+  db.Book.find(function(err, books) {
+    res.json({books: books});
+  });
+  // db.Book.find(function(err, books) {
+  //   if(err) {return console.log("index error: " + err);}
+  //   res.json(books);
+  // });
 });
 
 // get one book
 app.get('/api/books/:id', function (req, res) {
   // find one book by its id
-  console.log('books show', req.params);
-  for(var i=0; i < books.length; i++) {
-    if (books[i]._id === req.params.id) {
-      res.json(books[i]);
-      break; // we found the right book, we can stop searching
-    }
-  }
+  console.log(req.params.id);
+  var bookId = req.params.id;
+  db.Book.findOne({_id: bookId}, function (err, books) {
+    res.json(books);
+  });
+  // for(var i=0; i < books.length; i++) {
+  //   if (books[i]._id === req.params.id) {
+  //     res.json(books[i]);
+  //     break; // we found the right book, we can stop searching
+  //   }
+  // }
 });
 
 // create new book
 app.post('/api/books', function (req, res) {
   // create new book with form data (`req.body`)
   console.log('books create', req.body);
-  var newBook = req.body;
-  books.push(newBook);
-  res.json(newBook);
+  var newBook = new Book(req.body);
+  newBook.save(function handleDBBookSaved(err, savedBook) {
+    res.json(savedBook);
+  });
+  // books.push(newBook);
+  // res.json(newBook);
 });
 
 // update book
@@ -104,13 +117,18 @@ app.delete('/api/books/:id', function (req, res) {
   console.log('books delete', req.params);
   var bookId = req.params.id;
   // find the index of the book we want to remove
-  var deleteBookIndex = books.findIndex(function(element, index) {
-    return (element._id === parseInt(req.params.id)); //params are strings
+  db.Book.findOneAndRemove({_id: bookId}, function (err, deletedBook) {
+    res.json(deletedBook);
   });
-  console.log('deleting book with index', deleteBookIndex);
-  var bookToDelete = books[deleteBookIndex];
-  books.splice(deleteBookIndex, 1);
-  res.json(bookToDelete);
+
+
+  // var deleteBookIndex = books.findIndex(function(element, index) {
+  //   return (element._id === parseInt(req.params.id)); //params are strings
+  // });
+  // console.log('deleting book with index', deleteBookIndex);
+  // var bookToDelete = books[deleteBookIndex];
+  // books.splice(deleteBookIndex, 1);
+  // res.json(bookToDelete);
 });
 
 
